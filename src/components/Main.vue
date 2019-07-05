@@ -37,6 +37,9 @@
         item-text="label"
         item-children="items"
         open-on-click
+        activatable
+        return-object
+        :active.sync="active"
       >
       <template v-if="item.type">
         <v-icon color="warning" v-if="item.type === 'method'">playlist_play</v-icon>
@@ -124,7 +127,7 @@
 <script lang="ts">
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["getLeaf"] }] */
 
-import { Component, Prop, Vue } from 'vue-property-decorator';
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { BigNumber } from 'bignumber.js';
 
 import * as solcjs from 'solc-js';
@@ -134,6 +137,8 @@ import { utils } from './utils';
 @Component
 export default class Main extends Vue {
   readonly ETHER = 10 ** 18;
+
+  active: any[] = [];
 
   to = '';
 
@@ -172,6 +177,27 @@ export default class Main extends Vue {
     this.log = tx;
   }
 
+  @Watch('active')
+  async onActive(value: any[]) {
+    if(value) {
+      if(value.length > 0) {
+        const { id, contractName, type } = value[0];
+        console.log('active', {
+          id,
+          contractName,
+          type
+        });
+
+        if(type === 'method') {
+          await this.callMethod(contractName, id);
+        } else if(type === 'event') {
+          //
+        }
+      }
+    }
+  }
+
+
   async handleCompile() {
     try {
       this.compileMessage = '';
@@ -189,7 +215,7 @@ export default class Main extends Vue {
     }
   }
 
-  async mounted() {
+  async beforeMount() {
     const { releases } = await solcjs.versions();
     this.version = releases.find((i: any) => i.indexOf('v0.5.0-stable') > -1);
 
@@ -226,7 +252,7 @@ export default class Main extends Vue {
     this.loadContractTreeview($w.contracts);
   }
 
-  getLeaf(items: any, type: string) {
+  getLeaf(contractName: string, items: any, type: string) {
     if (!items) return [];
     return Object.keys(items).map((key: string) => {
       const fn = items[key];
@@ -234,15 +260,15 @@ export default class Main extends Vue {
         id: key,
         label: key,
         type,
-        fn,
+        contractName
       };
     });
   }
 
-  loadChild(methods: any, events: any) {
+  loadChild(contractName: string, methods: any, events: any) {
     return [
-      ...this.getLeaf(methods, 'method'),
-      ...this.getLeaf(events, 'event'),
+      ...this.getLeaf(contractName, methods, 'method'),
+      ...this.getLeaf(contractName, events, 'event'),
     ];
   }
 
@@ -254,11 +280,21 @@ export default class Main extends Vue {
         id: key,
         label: key,
         // get methods
-        items: this.loadChild(c.methods, c.events),
+        items: this.loadChild(key, c.methods, c.events),
       };
     });
 
     this.contractView = tree;
+  }
+
+  async callMethod(contractName: string, methodName: string) {
+    const $w = window as any;
+    if($w.contracts) {
+      const contract = $w.contracts[contractName];
+      const method = contract.abi.find((m: any) => m.name === methodName);
+      console.log('contract', contract);
+      console.log('method', method);
+    }
   }
 }
 </script>
