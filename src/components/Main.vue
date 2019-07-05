@@ -38,7 +38,11 @@
         item-children="items"
         open-on-click
       >
-        <span v-if="item.type">{{ item.type }}</span>
+      <template v-if="item.type">
+        <v-icon color="warning" v-if="item.type === 'method'">playlist_play</v-icon>
+        <v-icon color="primary" v-else-if="item.type === 'event'">playlist_add_check</v-icon>
+        <span>{{ item.type }}</span>
+      </template>
       </v-treeview>
     </v-navigation-drawer>
     <v-toolbar app clipped-left>
