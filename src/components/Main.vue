@@ -1,119 +1,120 @@
 <template>
   <v-app dark>
-  <v-navigation-drawer
-    app
-    overflow
-    clipped
-    floating>
-        <v-list dense>
-          <v-list-tile>
-            <v-list-tile-content>
-              <v-list-tile-title>DBETs</v-list-tile-title>
-            </v-list-tile-content>
-            <v-list-tile-action>
-              <v-list-tile-sub-title>{{ DBETs }}</v-list-tile-sub-title>
-            </v-list-tile-action>
-          </v-list-tile>
+    <v-navigation-drawer app overflow clipped floating>
+      <v-list dense>
+        <v-list-tile>
+          <v-list-tile-content>
+            <v-list-tile-title>DBETs</v-list-tile-title>
+          </v-list-tile-content>
+          <v-list-tile-action>
+            <v-list-tile-sub-title>{{ DBETs }}</v-list-tile-sub-title>
+          </v-list-tile-action>
+        </v-list-tile>
 
+        <v-divider></v-divider>
+        <v-list-tile>
+          <v-list-tile-content>
+            <v-list-tile-title>VTHO</v-list-tile-title>
+          </v-list-tile-content>
+          <v-list-tile-action>
+            <v-list-tile-sub-title>{{ energy }}</v-list-tile-sub-title>
+          </v-list-tile-action>
+        </v-list-tile>
+      </v-list>
       <v-divider></v-divider>
-          <v-list-tile>
-            <v-list-tile-content>
-              <v-list-tile-title>VTHO</v-list-tile-title>
-            </v-list-tile-content>
-             <v-list-tile-action>
-              <v-list-tile-sub-title>{{ energy }}</v-list-tile-sub-title>
-            </v-list-tile-action>
-          </v-list-tile>
-        </v-list>
-      <v-divider></v-divider>
-     <v-list>
-      <v-list-tile>
-        <v-list-tile-action>
-          <v-icon>dashboard</v-icon>
-        </v-list-tile-action>
-        <v-list-tile-title>Contracts</v-list-tile-title>
-      </v-list-tile>
-    </v-list>
-     <v-treeview
-          :items="contractView"
-          v-slot:prepend="{ item }"
-          item-key="id"
-          item-text="label"
-          item-children="items"
-          open-on-click
-        >
-          <span v-if="item.type">{{ item.type }}</span>
-      </v-treeview>
-    </v-navigation-drawer>
-   <v-toolbar
-      app
-      clipped-left>
-      <v-btn flat large color="transparent">
-      <img width="50" src="@/assets/logo.png" contain>
-    </v-btn>
-      <v-toolbar-title>DecentBet Contracts CLI - {{ network }}</v-toolbar-title>
-       <v-spacer></v-spacer>
-       <v-toolbar-items>
-      <v-btn flat>Address: {{ address }}</v-btn>
-    </v-toolbar-items>
-    </v-toolbar>
-  <v-content>
-    <v-container fluid>
-    <v-layout>
-      <v-flex>
-    <v-card>
       <v-list>
         <v-list-tile>
-            <v-list-tile-action>
-              <v-icon color="white">star</v-icon>
-            </v-list-tile-action>
-
-            <v-list-tile-content>
-              <v-list-tile-title>Open Chrome Inspector to access Solido CLI</v-list-tile-title>
-            </v-list-tile-content>
-          </v-list-tile>
-         <v-list-tile>
-            <v-list-tile-action>
-              <v-icon color="white">star</v-icon>
-            </v-list-tile-action>
-
-            <v-list-tile-content>
-              <v-list-tile-title>Type contracts or a contract name to start</v-list-tile-title>
-            </v-list-tile-content>
-          </v-list-tile>
+          <v-list-tile-action>
+            <v-icon>dashboard</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-title>Contracts</v-list-tile-title>
+        </v-list-tile>
       </v-list>
-    </v-card>
+      <v-treeview
+        :items="contractView"
+        v-slot:prepend="{ item }"
+        item-key="id"
+        item-text="label"
+        item-children="items"
+        open-on-click
+      >
+        <span v-if="item.type">{{ item.type }}</span>
+      </v-treeview>
+    </v-navigation-drawer>
+    <v-toolbar app clipped-left>
+      <v-btn flat large color="transparent">
+        <img width="50" src="@/assets/logo.png" contain />
+      </v-btn>
+      <v-toolbar-title>DecentBet Contracts CLI - {{ network }}</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-toolbar-items>
+        <v-btn flat>Address: {{ address }}</v-btn>
+      </v-toolbar-items>
+    </v-toolbar>
+    <v-content>
+      <v-container fluid>
+        <v-layout>
+          <v-flex>
+            <v-card>
+              <v-list>
+                <v-list-tile>
+                  <v-list-tile-action>
+                    <v-icon color="white">star</v-icon>
+                  </v-list-tile-action>
 
-      </v-flex>
-    </v-layout>
-    <v-dialog v-model="dialog" width="500">
-      <template v-slot:activator="{ on }">
-        <!-- <v-btn color="blue lighten-2" dark v-on="on">Add contract</v-btn> -->
-      </template>
-      <v-card>
-        <v-card-title class="headline blue" primary-title>Add Contract</v-card-title>
-        <v-card-text>
-          <v-textarea
-            box
-            label="v0.5.0"
-            name="contractCode"
-            v-model="contractCode"
-            @change="handleCompile"
-          ></v-textarea>
-          <div v-if="isCompilationComplete">{{ compileMessage }}</div>
-          <div v-if="isCompilationComplete === false">Errors while compiling, verify contract</div>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" flat @click="dialog = false">Import to contracts</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    </v-container>
-  </v-content>
-  <v-footer app></v-footer>
-</v-app>
+                  <v-list-tile-content>
+                    <v-list-tile-title>
+                      Open Chrome Inspector to access Solido CLI
+                    </v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+                <v-list-tile>
+                  <v-list-tile-action>
+                    <v-icon color="white">star</v-icon>
+                  </v-list-tile-action>
+
+                  <v-list-tile-content>
+                    <v-list-tile-title>
+                      Type contracts or a contract name to start
+                    </v-list-tile-title>
+                  </v-list-tile-content>
+                </v-list-tile>
+              </v-list>
+            </v-card>
+          </v-flex>
+        </v-layout>
+        <v-dialog v-model="dialog" width="500">
+          <template v-slot:activator="{ on }">
+            <!-- <v-btn color="blue lighten-2" dark v-on="on">Add contract</v-btn> -->
+          </template>
+          <v-card>
+            <v-card-title class="headline blue" primary-title>Add Contract</v-card-title>
+            <v-card-text>
+              <v-textarea
+                box
+                label="v0.5.0"
+                name="contractCode"
+                v-model="contractCode"
+                @change="handleCompile"
+              ></v-textarea>
+              <div v-if="isCompilationComplete">{{ compileMessage }}</div>
+              <div v-if="isCompilationComplete === false">
+                Errors while compiling, verify contract
+              </div>
+            </v-card-text>
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn color="primary" flat @click="dialog = false">
+                Import to contracts
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-container>
+    </v-content>
+    <v-footer app></v-footer>
+  </v-app>
 </template>
 
 <script lang="ts">
