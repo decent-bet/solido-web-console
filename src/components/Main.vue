@@ -88,6 +88,109 @@
                 </v-list-tile>
               </v-list>
             </v-card>
+            <p></p>
+            <v-alert
+                  v-if="currentActive"
+                  class="text-xs-left"
+                  style="width: 100%"
+                  :value="true"
+                  :color="currentActive.type === 'method' ? 'warning' : 'primary'"
+                  :icon="currentActive.type === 'method' ? 'playlist_play' : 'playlist_add_check'"
+                >
+                  {{ `${currentActive.contractName}.${currentActive.id}${(currentActive.type === 'method' ? '()': '')}`}}
+                </v-alert>
+
+            <v-card v-if="currentMemberAbi">
+              <v-card-title class="text-xs-left">
+                <h3>Attributes</h3>
+              </v-card-title>
+              <v-card-text>
+                    <v-list>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            Constant: <code>{{currentMemberAbi.constant}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            Name: <code>{{currentMemberAbi.name}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            Type: <code>{{currentMemberAbi.type}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            Payable: <code>{{currentMemberAbi.payable}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            StateMutability: <code>{{currentMemberAbi.stateMutability}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                      <v-list-tile>
+                        <v-list-tile-content>
+                          <v-list-tile-title>
+                            Signature: <code>{{currentMemberAbi.signature}}</code>
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                    </v-list>
+              </v-card-text>
+              </v-card>
+
+              <v-card v-if="currentMemberAbi">
+                <v-form >
+                <v-card-title class="text-xs-left" v-if="inputs.length > 0">
+                  <h3>Inputs</h3>
+                </v-card-title>
+                <v-card-text v-if="inputs.length > 0">
+                   <v-text-field
+                    style="margin-top: 1em"
+                    v-for="input in inputs"
+                    :key="input.name"
+                    :label="input.name"
+                    :placeholder="input.name"
+                    persistent-hint
+                    :hint="input.type"
+                    required
+                  ></v-text-field>
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn color="primary">Call</v-btn>
+                  <v-btn>Clear</v-btn>
+                </v-card-actions>
+              </v-form>
+              </v-card>
+              <v-card v-if="outputs.length > 0">
+                <v-card-title class="text-xs-left">
+                  <h3>Outputs</h3>
+                </v-card-title>
+              <v-card-text>
+                  <v-list>
+                <v-list-tile v-for="out in outputs" :key="out.name">
+                        <v-list-tile-content v-if="out">
+                          <v-list-tile-title>
+                               {{out.name}}:  {{out.type}}
+                          </v-list-tile-title>
+                        </v-list-tile-content>
+                      </v-list-tile>
+                    </v-list>
+               </v-card-text>
+              </v-card>
           </v-flex>
         </v-layout>
         <v-dialog v-model="dialog" width="500">
@@ -125,11 +228,16 @@
 </template>
 
 <script lang="ts">
-/* eslint class-methods-use-this: ["error", { "exceptMethods": ["getLeaf"] }] */
+/* eslint class-methods-use-this: ["error",
+{ "exceptMethods": ["getLeaf", "onActive", "callMethod"] }] */
 
-import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
+import {
+  Component,
+  Prop,
+  Vue,
+  Watch,
+} from 'vue-property-decorator';
 import { BigNumber } from 'bignumber.js';
-
 import * as solcjs from 'solc-js';
 import { setupSolido } from './setupSolido';
 import { utils } from './utils';
@@ -168,6 +276,33 @@ export default class Main extends Vue {
 
   contractView: any[] = [];
 
+  currentMemberAbi: any = null;
+
+  get inputs() {
+    if (this.currentMemberAbi && this.currentMemberAbi.inputs) {
+      return this.currentMemberAbi.inputs.filter( ((i: any)=>i.name !== ''));
+    }
+    return [];
+  }
+
+  get outputs() {
+    if (this.currentMemberAbi && this.currentMemberAbi.outputs) {
+      return this.currentMemberAbi.outputs.filter( ((i: any)=>i.name !== ''));
+    }
+    return [];
+  }
+
+  get currentActive() {
+   if (this.active) {
+      if (this.active.length > 0) {
+        const { contractName, id, type } = this.active[0];
+        return { contractName, id, type };
+      }
+    }
+
+    return null;
+  }
+
   async transferDBET() {
     const $w = window as any;
     const tx = await $w.contracts.DBETVETToken.methods.transfer(
@@ -179,24 +314,13 @@ export default class Main extends Vue {
 
   @Watch('active')
   async onActive(value: any[]) {
-    if(value) {
-      if(value.length > 0) {
-        const { id, contractName, type } = value[0];
-        console.log('active', {
-          id,
-          contractName,
-          type
-        });
-
-        if(type === 'method') {
-          await this.callMethod(contractName, id);
-        } else if(type === 'event') {
-          //
-        }
+    if (value) {
+      if (value.length > 0) {
+        const { contractName, id, type } = value[0];
+        await this.setMemberDetail(contractName, id, type);
       }
     }
   }
-
 
   async handleCompile() {
     try {
@@ -260,7 +384,7 @@ export default class Main extends Vue {
         id: key,
         label: key,
         type,
-        contractName
+        contractName,
       };
     });
   }
@@ -287,13 +411,12 @@ export default class Main extends Vue {
     this.contractView = tree;
   }
 
-  async callMethod(contractName: string, methodName: string) {
+  async setMemberDetail(contractName: string, name: string, type: string) {
     const $w = window as any;
-    if($w.contracts) {
+    if ($w.contracts) {
       const contract = $w.contracts[contractName];
-      const method = contract.abi.find((m: any) => m.name === methodName);
-      console.log('contract', contract);
-      console.log('method', method);
+      const abi = contract.abi.find((m: any) => m.name === name);
+      this.currentMemberAbi = abi;
     }
   }
 }
