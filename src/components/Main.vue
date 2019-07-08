@@ -153,12 +153,13 @@
               </v-card>
 
               <v-card v-if="currentMemberAbi">
-                <v-form >
+                <v-form>
                 <v-card-title class="text-xs-left" v-if="inputs.length > 0">
                   <h3>Inputs</h3>
                 </v-card-title>
                 <v-card-text v-if="inputs.length > 0">
                    <v-text-field
+                    v-model="form[input.name]"
                     style="margin-top: 1em"
                     v-for="input in inputs"
                     :key="input.name"
@@ -169,11 +170,18 @@
                   ></v-text-field>
                 </v-card-text>
                 <v-card-actions>
-                  <v-btn color="primary">Call</v-btn>
-                  <v-btn>Clear</v-btn>
+                  <v-btn color="primary" @click="didClickOnCall">Call</v-btn>
+                  <v-btn @click="didClickOnClear">Clear</v-btn>
                 </v-card-actions>
               </v-form>
               </v-card>
+              <v-flex>
+                <pre style="width: 100%: margin-top: 1em; text-align: left">
+                  <code v-text="result" v-if="result">
+
+                  </code>
+                </pre>
+              </v-flex>
               <v-card v-if="outputs.length > 0">
                 <v-card-title class="text-xs-left">
                   <h3>Outputs</h3>
@@ -194,11 +202,13 @@
         </v-layout>
         <v-dialog v-model="dialog" width="500">
           <template v-slot:activator="{ on }">
-            <!-- <v-btn color="blue lighten-2" dark v-on="on">Add contract</v-btn> -->
+            <v-btn color="blue lighten-2" dark v-on="on">Add contract</v-btn>
           </template>
           <v-card>
             <v-card-title class="headline blue" primary-title>Add Contract</v-card-title>
             <v-card-text>
+              <v-text-field v-model="contractName" label="Name"></v-text-field>
+              <v-text-field v-model="contractAddress" label="Adress"></v-text-field>
               <v-textarea
                 box
                 label="v0.5.0"
@@ -214,15 +224,21 @@
             <v-divider></v-divider>
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn color="primary" flat @click="dialog = false">
-                Import to contracts
+              <v-btn color="primary" flat @click="importContract()">
+                Import
               </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
       </v-container>
     </v-content>
-    <v-footer app></v-footer>
+    <v-footer app style="min-height: 3em">
+      <pre style="width: 100%: padding-top: 1em; text-align: left">
+      <code v-if="formError" v-text="formError">
+
+      </code>
+      </pre>
+    </v-footer>
   </v-app>
 </template>
 
@@ -238,12 +254,19 @@ import {
 } from 'vue-property-decorator';
 import { BigNumber } from 'bignumber.js';
 import * as solcjs from 'solc-js';
-import { setupSolido } from './setupSolido';
+import { setupSolido, rebindSolido } from './setupSolido';
+import { ContractImport } from '@decent-bet/solido';
 import { utils } from './utils';
 
 @Component
 export default class Main extends Vue {
   readonly ETHER = 10 ** 18;
+
+  contractAddress: string = '';
+
+  contractName: string = '';
+
+  contractCode: string = '';
 
   active: any[] = [];
 
@@ -259,13 +282,15 @@ export default class Main extends Vue {
 
   address: string = '';
 
-  contractCode: string = '';
-
   version: string = '';
 
   dialog: any = null;
 
   abi: any = {};
+
+  form: any = {};
+
+  formError: any = null;
 
   isCompilationComplete: boolean = true;
 
@@ -276,6 +301,8 @@ export default class Main extends Vue {
   contractView: any[] = [];
 
   currentMemberAbi: any = null;
+
+  result: any = null;
 
   get inputs() {
     if (this.currentMemberAbi && this.currentMemberAbi.inputs) {
@@ -315,9 +342,12 @@ export default class Main extends Vue {
   async onActive(value: any[]) {
     if (value) {
       if (value.length > 0) {
+        this.didClickOnClear();
         const { contractName, id, type } = value[0];
         await this.setMemberDetail(contractName, id, type);
       }
+    } else {
+      this.didClickOnClear();
     }
   }
 
@@ -332,6 +362,69 @@ export default class Main extends Vue {
       this.abi = output[0].abi;
       this.compileMessage = 'ABI is ready';
       this.isCompilationComplete = true;
+    } catch (e) {
+      console.log(e);
+      this.isCompilationComplete = false;
+    }
+  }
+
+  async didClickOnCall() {
+      if(this.currentActive) {
+        const { contractName, id, type } = this.currentActive;
+        try {
+          const $w = window as any;
+          if ($w.contracts) {
+            const contract = $w.contracts[contractName];
+            let fn;
+            if (type === 'method') {
+              fn = contract.methods[id];
+            } else if (type === 'event') {
+              fn = contract.events[id];
+            } else {
+              return;
+            }
+
+            if (this.inputs.length > 0) {
+              const params = Object.values(this.form);
+              const data = await fn.apply(null, params);
+              this.result = data.decoded['0'];
+            } else {
+              const data = await fn();
+              this.result = data.decoded['0'];
+            }
+          }
+        } catch (error) {
+          this.formError = error;
+        }
+    }
+  }
+
+  didClickOnClear() {
+     this.form = {};
+     this.result = null;
+     this.formError = null;
+  }
+
+  async importContract() {
+    try {
+      this.compileMessage = '';
+      this.compileMessage = 'Compiling...';
+      const compiler = await solcjs(this.version);
+      this.isCompilationComplete = true;
+
+      const output = await compiler(this.contractCode);
+      this.abi = output[0].abi;
+      this.compileMessage = 'ABI is ready';
+      this.isCompilationComplete = true;
+      const contractImport: ContractImport = {
+        address: this.contractAddress,
+        raw: { abi: this.abi }
+      }
+
+      // add to contracts
+      const $w = window as any;
+      $w.contracts = await rebindSolido(this.contractName, contractImport);
+
     } catch (e) {
       console.log(e);
       this.isCompilationComplete = false;
