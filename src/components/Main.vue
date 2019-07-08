@@ -161,8 +161,8 @@
                    <v-text-field
                     v-model="form[input.name]"
                     style="margin-top: 1em"
-                    v-for="input in inputs"
-                    :key="input.name"
+                    v-for="(input, index) in inputs"
+                    :key="index"
                     :label="input.name"
                     persistent-hint
                     :hint="input.type"
@@ -175,10 +175,9 @@
                 </v-card-actions>
               </v-form>
               </v-card>
-              <br>
               <v-card style="margin-top: 1em; width: 100%; text-align: left">
               <v-flex>
-                 <code d-flex style="width: 100%" v-if="result || formError">
+                 <code d-flex style="width: 100%">
                     {{formError}}
                     {{result}}
                  </code>
@@ -303,14 +302,14 @@ export default class Main extends Vue {
 
   get inputs() {
     if (this.currentMemberAbi && this.currentMemberAbi.inputs) {
-      return this.currentMemberAbi.inputs.filter( ((i: any)=>i.name !== ''));
+      return this.currentMemberAbi.inputs;
     }
     return [];
   }
 
   get outputs() {
     if (this.currentMemberAbi && this.currentMemberAbi.outputs) {
-      return this.currentMemberAbi.outputs.filter( ((i: any)=>i.name !== ''));
+      return this.currentMemberAbi.outputs;
     }
     return [];
   }
@@ -366,6 +365,8 @@ export default class Main extends Vue {
   }
 
   async didClickOnCall() {
+     this.result = null;
+     this.formError = null;
       if(this.currentActive) {
         const { contractName, id, type } = this.currentActive;
         try {
