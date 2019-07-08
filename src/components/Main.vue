@@ -163,7 +163,6 @@
                     v-for="input in inputs"
                     :key="input.name"
                     :label="input.name"
-                    :placeholder="input.name"
                     persistent-hint
                     :hint="input.type"
                     required
