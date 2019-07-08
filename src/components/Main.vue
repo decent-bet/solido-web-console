@@ -175,13 +175,15 @@
                 </v-card-actions>
               </v-form>
               </v-card>
+              <br>
+              <v-card style="margin-top: 1em; width: 100%; text-align: left">
               <v-flex>
-                <pre style="width: 100%: margin-top: 1em; text-align: left">
-                  <code v-text="result" v-if="result">
-
-                  </code>
-                </pre>
+                 <code d-flex style="width: 100%" v-if="result || formError">
+                    {{formError}}
+                    {{result}}
+                 </code>
               </v-flex>
+              </v-card>
               <v-card v-if="outputs.length > 0">
                 <v-card-title class="text-xs-left">
                   <h3>Outputs</h3>
@@ -232,12 +234,7 @@
         </v-dialog>
       </v-container>
     </v-content>
-    <v-footer app style="min-height: 3em">
-      <pre style="width: 100%: padding-top: 1em; text-align: left">
-      <code v-if="formError" v-text="formError">
-
-      </code>
-      </pre>
+    <v-footer app>
     </v-footer>
   </v-app>
 </template>
