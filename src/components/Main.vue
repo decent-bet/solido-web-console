@@ -159,10 +159,10 @@
                 </v-card-title>
                 <v-card-text v-if="inputs.length > 0">
                    <v-text-field
-                    v-model="form[input.name]"
                     style="margin-top: 1em"
                     v-for="(input, index) in inputs"
                     :key="index"
+                    v-model="form[index]"
                     :label="input.name"
                     persistent-hint
                     :hint="input.type"
