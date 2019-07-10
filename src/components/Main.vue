@@ -162,11 +162,11 @@
                     style="margin-top: 1em"
                     v-for="(input, index) in inputs"
                     :key="index"
-                    v-model="form[index]"
-                    :label="input.name"
+                    v-model="form[input.name]"
+                    :label="`${input.name} ${(input.indexed ? '(indexed)': '')}`"
                     persistent-hint
                     :hint="input.type"
-                    required
+                    :required="input.indexed"
                   ></v-text-field>
                 </v-card-text>
                 <v-card-actions>
@@ -231,9 +231,34 @@
             </v-card-actions>
           </v-card>
         </v-dialog>
+        <p></p>
+        <v-flex>
+          <v-card>
+            <v-card-title primary-title>Decode tool</v-card-title>
+            <v-card-text>
+                <v-flex>
+                  <v-textarea
+                    label="Encoded data"
+                    v-model="encodedData"
+              ></v-textarea>
+                <p></p>
+                </v-flex>
+                <v-flex>
+                  <code style="width: 100%; text-align: left">{{decodedData}}</code>
+                </v-flex>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+               <v-btn color="waring" @click="decodeData()">
+                Decode Data
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+      </v-flex>
       </v-container>
     </v-content>
     <v-footer app>
+
     </v-footer>
   </v-app>
 </template>
@@ -241,7 +266,7 @@
 <script lang="ts">
 /* eslint class-methods-use-this: ["error",
 { "exceptMethods": ["getLeaf", "onActive", "callMethod"] }] */
-
+const devkit = require('thor-devkit');
 import {
   Component,
   Prop,
@@ -281,6 +306,10 @@ export default class Main extends Vue {
   version: string = '';
 
   dialog: any = null;
+
+  encodedData: any = null;
+
+  decodedData: any = null
 
   abi: any = {};
 
@@ -334,6 +363,13 @@ export default class Main extends Vue {
     this.log = tx;
   }
 
+  async decodeData() {
+    if(this.encodedData) {
+      const fn = new devkit.abi.Function(this.currentMemberAbi);
+      this.decodedData = fn.decode(this.encodedData);
+    }
+  }
+
   @Watch('active')
   async onActive(value: any[]) {
     if (value) {
@@ -373,22 +409,33 @@ export default class Main extends Vue {
           const $w = window as any;
           if ($w.contracts) {
             const contract = $w.contracts[contractName];
-            let fn;
             if (type === 'method') {
-              fn = contract.methods[id];
+              let data;
+              const fn = contract.methods[id];
+               if (this.inputs.length > 0) {
+                  const params = Object.values(this.form);
+                  data = await fn.apply(null, params);
+               } else {
+                  data = await fn.apply(null);
+               }
+
+               this.result = data.decoded['0'];
+
             } else if (type === 'event') {
-              fn = contract.events[id];
+              let data;
+              const event = contract.events[id];
+              let filter = {};
+              if (this.inputs.length > 0) {
+                filter = {...this.form};
+                console.log('filter', filter);
+              }
+
+              const result =  await event.filter(filter)
+                    .order('desc')
+                    .apply(0, 1000);
+
             } else {
               return;
-            }
-
-            if (this.inputs.length > 0) {
-              const params = Object.values(this.form);
-              const data = await fn.apply(null, params);
-              this.result = data.decoded['0'];
-            } else {
-              const data = await fn();
-              this.result = data.decoded['0'];
             }
           }
         } catch (error) {
@@ -507,6 +554,9 @@ export default class Main extends Vue {
       const contract = $w.contracts[contractName];
       const abi = contract.abi.find((m: any) => m.name === name);
       this.currentMemberAbi = abi;
+      abi.inputs.forEach((i: any) => {
+          this.form[i.name] = null;
+      });
     }
   }
 }
