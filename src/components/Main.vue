@@ -359,7 +359,7 @@ export default class Main extends Vue {
     const tx = await $w.contracts.DBETVETToken.methods.transfer(
       this.to,
       new BigNumber(this.amount).multipliedBy(this.ETHER),
-    );
+    ).call();
     this.log = tx;
   }
 
@@ -411,12 +411,19 @@ export default class Main extends Vue {
             const contract = $w.contracts[contractName];
             if (type === 'method') {
               let data;
-              const fn = contract.methods[id];
+              let fn = contract.methods[id];
+
                if (this.inputs.length > 0) {
                   const params = Object.values(this.form);
-                  data = await fn.apply(null, params);
+                  fn = fn.apply(null, params);
                } else {
-                  data = await fn.apply(null);
+                  fn = fn.apply(null);
+               }
+               const isWrite = !!fn.call;
+               if (isWrite) {
+                 data = await fn.call();
+               } else {
+                 data = await fn;
                }
 
                this.result = data.decoded['0'];
