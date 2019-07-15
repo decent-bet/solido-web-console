@@ -1,6 +1,7 @@
 import { SolidoModule, ContractImport, ContractProviderMapping } from '@decent-bet/solido';
 import { ConnexPlugin } from '@decent-bet/solido-provider-connex';
 import { DBETVETTokenContract, QuestContract, AdminContract } from '@decent-bet/contract-playdbet';
+import { QuestContract as QuestContractEntity } from '@decent-bet/playdbet-contract-entities'
 
 let module: SolidoModule;
 let contractMappings: ContractProviderMapping[] = [];
@@ -16,6 +17,7 @@ export const setupSolido = async () => {
     {
       name: 'Quest',
       import: QuestContract,
+      entity: QuestContractEntity,
       provider: ConnexPlugin,
       enableDynamicStubs: true,
     },
