@@ -1,7 +1,10 @@
-import { SolidoModule, ContractImport, ContractProviderMapping } from '@decent-bet/solido';
-import { ConnexPlugin } from '@decent-bet/solido-provider-connex';
-import { DBETVETTokenContract, QuestContract, AdminContract } from '@decent-bet/contract-playdbet';
-import { QuestContract as QuestContractEntity } from '@decent-bet/playdbet-contract-entities'
+import { SolidoModule, ContractImport, ContractProviderMapping } from "@decent-bet/solido";
+import { ConnexPlugin } from "@decent-bet/solido-provider-connex";
+import { DBETVETTokenContract, QuestContract, AdminContract } from "@decent-bet/contract-playdbet";
+import {
+  QuestContract as QuestContractEntity,
+  DBETVETTokenContract as TokenEntity
+} from "@decent-bet/playdbet-contract-entities";
 
 let module: SolidoModule;
 let contractMappings: ContractProviderMapping[] = [];
@@ -9,24 +12,25 @@ let contractMappings: ContractProviderMapping[] = [];
 export const setupSolido = async () => {
   contractMappings = [
     {
-      name: 'DBETVETToken',
+      name: "DBETVETToken",
       import: DBETVETTokenContract,
       provider: ConnexPlugin,
-      enableDynamicStubs: true,
+      entity: TokenEntity,
+      enableDynamicStubs: true
     },
     {
-      name: 'Quest',
+      name: "Quest",
       import: QuestContract,
       entity: QuestContractEntity,
       provider: ConnexPlugin,
-      enableDynamicStubs: true,
+      enableDynamicStubs: true
     },
     {
-      name: 'Admin',
+      name: "Admin",
       import: AdminContract,
       provider: ConnexPlugin,
-      enableDynamicStubs: true,
-    },
+      enableDynamicStubs: true
+    }
   ];
   // Create Solido Module
   module = new SolidoModule(contractMappings);
@@ -37,27 +41,30 @@ export const setupSolido = async () => {
   const { id } = connex.thor.genesis;
   const chainTag = `0x${id.substring(id.length - 2, id.length)}`;
 
-
-  return module.bindContracts({
-    connex: {
-      provider: connex,
-      options: {
-        defaultAccount,
-        chainTag,
-      },
-    },
-  }).connect();
+  return module
+    .bindContracts({
+      connex: {
+        provider: connex,
+        options: {
+          defaultAccount,
+          chainTag
+        }
+      }
+    })
+    .connect();
 };
 
 export const rebindSolido = async (name: string, contractImport: ContractImport) => {
-  
   // Create Solido Module
-  contractMappings = [...contractMappings, {
-    name,
-    import: contractImport,
-    provider: ConnexPlugin,
-    enableDynamicStubs: true,
-  }]
+  contractMappings = [
+    ...contractMappings,
+    {
+      name,
+      import: contractImport,
+      provider: ConnexPlugin,
+      enableDynamicStubs: true
+    }
+  ];
   module = new SolidoModule(contractMappings);
 
   const cometResult = await (window as any).thor.enable();
@@ -66,15 +73,15 @@ export const rebindSolido = async (name: string, contractImport: ContractImport)
   const { id } = connex.thor.genesis;
   const chainTag = `0x${id.substring(id.length - 2, id.length)}`;
 
-  
-  return module.bindContracts({
-    connex: {
-      provider: connex,
-      options: {
-        defaultAccount,
-        chainTag,
-      },
-    },
-  }).connect();
-
+  return module
+    .bindContracts({
+      connex: {
+        provider: connex,
+        options: {
+          defaultAccount,
+          chainTag
+        }
+      }
+    })
+    .connect();
 };
