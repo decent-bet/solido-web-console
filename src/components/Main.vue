@@ -255,6 +255,24 @@
             </v-card-actions>
           </v-card>
       </v-flex>
+        <v-flex>
+          <v-card>
+            <v-card-title primary-title>Vechain BIP-39 Address Generator</v-card-title>
+            <v-card-text>
+                <v-flex>
+                  <p>Public Address: {{ publicAddress }}</p>
+                  <p>Mnemonic: {{ mnemonic }}</p>
+                  <p>Private Key: {{ privateKey }}</p>
+                </v-flex>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+               <v-btn color="waring" @click="generateBip39()">
+                Generate
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+      </v-flex>
       </v-container>
     </v-content>
     <v-footer app>
@@ -278,9 +296,18 @@ import * as solcjs from 'solc-js';
 import { setupSolido, rebindSolido } from './setupSolido';
 import { ContractImport } from '@decent-bet/solido';
 import { utils } from './utils';
+import * as bip39 from 'bip39';
+import * as ethers from 'ethers';
 
 @Component
 export default class Main extends Vue {
+
+  publicAddress = '';
+
+  privateKey = '';
+
+  mnemonic = '';
+
   readonly ETHER = 10 ** 18;
 
   contractAddress: string = '';
@@ -328,6 +355,15 @@ export default class Main extends Vue {
   currentMemberAbi: any = null;
 
   result: any = null;
+
+  ethersWallet: ethers.Wallet & any = ethers.Wallet;
+
+  generateBip39() {
+    this.mnemonic = bip39.generateMnemonic();
+    const vetWallet = this.ethersWallet.fromMnemonic(this.mnemonic, "m/44'/818'/0'/0/0");
+    this.publicAddress = vetWallet.address;
+    this.privateKey = vetWallet.privateKey;    
+  }
 
   get inputs() {
     if (this.currentMemberAbi && this.currentMemberAbi.inputs) {
