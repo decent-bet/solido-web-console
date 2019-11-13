@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@decent-bet/contract-migration": "1.0.1",
-    "@decent-bet/contract-playdbet": "1.0.12",
+    "@decent-bet/contract-playdbet": "1.0.13",
     "@decent-bet/contract-slots": "1.0.0-rc.3",
-    "@decent-bet/playdbet-contract-entities": "^2.6.1",
+    "@decent-bet/playdbet-contract-entities": "^2.6.2",
     "@decent-bet/solido": "^1.1.4",
     "@decent-bet/solido-provider-connex": "^1.2.3",
     "@vechain/connex": "^1.4.0",
