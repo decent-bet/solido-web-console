@@ -1,9 +1,13 @@
 import { SolidoModule, ContractImport, ContractProviderMapping } from "@decent-bet/solido";
 import { ConnexPlugin } from "@decent-bet/solido-provider-connex";
-import { DBETVETTokenContract, QuestContract, AdminContract } from "@decent-bet/contract-playdbet";
+import * as contracts from "@decent-bet/contract-playdbet";
 import {
   QuestContract as QuestContractEntity,
-  DBETVETTokenContract as TokenEntity
+  DBETVETTokenContract as TokenEntity,
+  TournamentContract as TournamentEntity,
+  DBETNodeContract as DBETNodeEntity,
+  NodeWalletContract as NodeWalletEntity,
+  AdminContract
 } from "@decent-bet/playdbet-contract-entities";
 
 let module: SolidoModule;
@@ -13,21 +17,43 @@ export const setupSolido = async () => {
   contractMappings = [
     {
       name: "DBETVETToken",
-      import: DBETVETTokenContract,
+      import: contracts.DBETVETTokenContract,
       provider: ConnexPlugin,
       entity: TokenEntity,
       enableDynamicStubs: true
     },
     {
       name: "Quest",
-      import: QuestContract,
+      import: contracts.QuestContract,
       entity: QuestContractEntity,
       provider: ConnexPlugin,
       enableDynamicStubs: true
     },
     {
+      name: "Tournament",
+      import: contracts.TournamentContract,
+      entity: TournamentEntity,
+      provider: ConnexPlugin,
+      enableDynamicStubs: true
+    },
+    {
+      name: "DBETNode",
+      import: (<any>contracts).DBETNode,
+      entity: DBETNodeEntity,
+      provider: ConnexPlugin,
+      enableDynamicStubs: true
+    },
+    {
+      name: "NodeWallet",
+      import: (<any>contracts).NodeWallet,
+      entity: NodeWalletEntity,
+      provider: ConnexPlugin,
+      enableDynamicStubs: true
+    },
+    {
       name: "Admin",
-      import: AdminContract,
+      import: contracts.AdminContract,
+      entity: AdminContract,
       provider: ConnexPlugin,
       enableDynamicStubs: true
     }
