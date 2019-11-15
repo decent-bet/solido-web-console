@@ -457,7 +457,9 @@ export default class Main extends Vue {
                }
                const isWrite = !!fn.call;
                if (isWrite) {
-                 data = await fn.call();
+                 data = await fn.call({
+                   dispatch: id,
+                 });
                } else {
                  data = await fn;
                }

@@ -9,6 +9,9 @@ import {
   NodeWalletContract as NodeWalletEntity,
   AdminContract
 } from "@decent-bet/playdbet-contract-entities";
+import { from, of } from 'rxjs';
+import { pluck, mergeMap, switchMap, tap, map } from 'rxjs/operators';
+import { async } from 'rxjs/internal/scheduler/async';
 
 let module: SolidoModule;
 let contractMappings: ContractProviderMapping[] = [];
@@ -67,17 +70,49 @@ export const setupSolido = async () => {
   const { id } = connex.thor.genesis;
   const chainTag = `0x${id.substring(id.length - 2, id.length)}`;
 
-  return module
+  // Configure reactive solido store
+  const store = {
+    state: {
+      'balance': {
+        dbet: 0,
+      }
+    },
+    mapActions: {
+      transfer: {
+        getter: 'balance',
+        onFi1lter: 'Transfer',
+        mutation: (options: any) => {
+          const { contract } = options;
+          return from(contract.methods.balanceOf(contract.defaultAccount))
+          .pipe(
+            map((i: any) => {
+              return { dbet: i.decoded[0] };
+            })
+          );
+        },
+      }
+    }
+  };
+
+  const c = module
     .bindContracts({
       connex: {
         provider: connex,
         options: {
           defaultAccount,
-          chainTag
+          chainTag,
+          store,
         }
       }
     })
     .connect();
+
+
+    (<any>c.DBETVETToken).subscribe('balance', (data: any) => {
+      console.log(data);
+    });
+
+    return c;
 };
 
 export const rebindSolido = async (name: string, contractImport: ContractImport) => {
